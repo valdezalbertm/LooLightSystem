@@ -196,9 +196,15 @@ void loop()
     delay(500);
 }
 
-// This should be computed or should have has_activity
-// TODO: This should be renamed to hasPreviousActivity as this will base if has activity
-// on sensor's threshold
+/**
+ * Will return of there's detected activity for the thresholds of the sensors.
+ * e.g. PIR sensor has 5 secs threshold. If there's activity for the last 5 secs in PIR sensor
+ * then this function will return true. As of now there are 3 major sensors.
+ * Each has it's own threshold
+ * DS1 = DS1_THRESHOLD_INTERVAL_MS
+ * DS2 = DS2_THRESHOLD_INTERVAL_MS
+ * PIR = PIR_THRESHOLD_INTERVAL_MS
+ */
 bool hasPreviousActivity() {
     // let's check if the current time is reached
     unsigned long current_millis = millis();
@@ -207,6 +213,17 @@ bool hasPreviousActivity() {
     return remain_active_until_ms > current_millis;
 }
 
+/**
+ * Fetch the current activity, will change the remain_active_until_ms up to a certain time
+ * dependes on the threshold
+ * e.g. if PIR threshold is 5secs, this function add time to remain_active_until_ms of 5 seconds
+ * the current time is 12:00:00, then if there's detected movement in let's say PIR,
+ * then the new remain_active_until_ms (which means LED will still remain on) is 12:00:05
+ * For sensors threshold look at:
+ * DS1 = DS1_THRESHOLD_INTERVAL_MS
+ * DS2 = DS2_THRESHOLD_INTERVAL_MS
+ * PIR = PIR_THRESHOLD_INTERVAL_MS
+ */
 void fetchActivity() {
     if (digitalRead(PIN_PIR)) {
         setRemainActiveUntil(PIR_THRESHOLD_INTERVAL_MS, false);
@@ -224,7 +241,14 @@ void fetchActivity() {
 }
 
 /**
- * Force option is used when the door is closed
+ * This will mainly set the `remain_active_until_ms` variable. What the variable do is that is the time that the
+ * LED will remain active. If the time now is 12:00 and the remain_active_until_ms is 1mins ahead, let's say
+ * 12:01, then the LED will turn off at 12:01. Unless forced to change that is used when the door is closed (because
+ * we need to set a long time for the door when someone is inside)
+ *
+ * @param int remain_active_threshold_ms future time that when reached, LED will turn off
+ * @param bool force normally, the time will only overridden when the new time is higher than the current time
+ * when forced, it will replace the current time without checking if it is more than the current or not.
  */
 void setRemainActiveUntil(int remain_active_threshold_ms, bool force = false)
 {
